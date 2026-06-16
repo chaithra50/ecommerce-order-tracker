@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Tracker — Live WebSocket Demo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; padding: 24px; }
+    h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; color: #fff; }
+    .subtitle { font-size: 13px; color: #666; margin-bottom: 24px; }
+
+    .card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+    .card h2 { font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 14px; }
+
+    .row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+    input, textarea { background: #0f1117; border: 1px solid #2a2d3a; border-radius: 6px; padding: 8px 12px;
+                      color: #e0e0e0; font-size: 13px; flex: 1; min-width: 180px; outline: none; }
+    input:focus, textarea:focus { border-color: #5865f2; }
+    textarea { resize: vertical; min-height: 80px; font-family: monospace; font-size: 12px; }
+
+    button { padding: 8px 18px; border: none; border-radius: 6px; font-size: 13px; font-weight: 500;
+             cursor: pointer; transition: opacity 0.15s; }
+    button:hover { opacity: 0.85; }
+    .btn-connect  { background: #2ea043; color: #fff; }
+    .btn-disconnect { background: #da3633; color: #fff; }
+    .btn-sub  { background: #5865f2; color: #fff; }
+    .btn-send { background: #388bfd; color: #fff; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .dot-connected    { background: #2ea043; }
+    .dot-disconnected { background: #da3633; }
+    #status-text { font-size: 13px; }
+
+    #log { background: #0f1117; border: 1px solid #2a2d3a; border-radius: 6px; padding: 12px;
+           height: 320px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 12px; }
+    .log-entry { padding: 4px 0; border-bottom: 1px solid #1a1d27; line-height: 1.5; }
+    .log-system  { color: #666; }
+    .log-success { color: #2ea043; }
+    .log-error   { color: #da3633; }
+    .log-message { color: #e0e0e0; }
+    .log-time    { color: #555; margin-right: 8px; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+    .badge-PENDING  { background: #664d03; color: #ffc107; }
+    .badge-CONFIRMED  { background: #0c3547; color: #17a2b8; }
+    .badge-SHIPPED  { background: #0b3d0b; color: #28a745; }
+    .badge-DELIVERED { background: #1a5c1a; color: #4dff4d; }
+    .badge-CANCELLED { background: #4d0909; color: #ff6b6b; }
+  </style>
+</head>
+<body>
+
+<h1>🛒 Order Tracker — Live WebSocket Demo</h1>
+<p class="subtitle">Connect to the Notification Service and watch real-time order updates arrive</p>
+
+<!-- Connection -->
+<div class="card">
+  <h2>Connection</h2>
+  <div class="row">
+    <input id="ws-url" value="http://localhost:8082/ws" placeholder="WebSocket URL">
+    <button class="btn-connect" id="btn-connect" onclick="connect()">Connect</button>
+    <button class="btn-disconnect" id="btn-disconnect" onclick="disconnect()" disabled>Disconnect</button>
+  </div>
+  <div style="display:flex; align-items:center; margin-top:8px;">
+    <span class="status-dot dot-disconnected" id="status-dot"></span>
+    <span id="status-text">Disconnected</span>
+  </div>
+</div>
+
+<!-- Subscribe -->
+<div class="card">
+  <h2>Subscribe to Order Updates</h2>
+  <div class="row">
+    <input id="order-number" placeholder="Order Number  e.g. ORD-ABC12345">
+    <button class="btn-sub" onclick="subscribeOrder()" id="btn-sub-order" disabled>Subscribe to Order</button>
+  </div>
+  <div class="row">
+    <input id="user-id" placeholder="User ID  e.g. 1">
+    <button class="btn-sub" onclick="subscribeUser()" id="btn-sub-user" disabled>Subscribe to User Feed</button>
+  </div>
+</div>
+
+<!-- Send test message -->
+<div class="card">
+  <h2>Simulate Order Event (for testing)</h2>
+  <div class="row">
+    <textarea id="msg-body">{
+  "orderNumber": "ORD-ABC12345",
+  "eventType": "ORDER_STATUS_UPDATED",
+  "oldStatus": "CONFIRMED",
+  "newStatus": "SHIPPED",
+  "trackingNumber": "TRK-987654321",
+  "message": "Your order has been shipped!",
+  "timestamp": "2024-01-15T10:30:00"
+}</textarea>
+  </div>
+  <div class="row">
+    <input id="send-destination" value="/app/test" placeholder="STOMP destination">
+    <button class="btn-send" onclick="sendMessage()" id="btn-send" disabled>Send</button>
+  </div>
+</div>
+
+<!-- Log -->
+<div class="card">
+  <h2>Event Log <span style="float:right;"><button onclick="clearLog()" style="background:transparent;color:#888;font-size:11px;padding:2px 8px;border:1px solid #2a2d3a;border-radius:4px;">Clear</button></span></h2>
+  <div id="log"></div>
+</div>
+
+<script>
+  let stompClient = null;
+  const subscriptions = {};
+
+  function connect() {
+    const url = document.getElementById('ws-url').value;
+    log('Connecting to ' + url + '...', 'system');
+
+    const socket = new SockJS(url);
+    stompClient = Stomp.over(socket);
+    stompClient.debug = null; // Suppress verbose STOMP debug output
+
+    stompClient.connect({}, () => {
+      setConnected(true);
+      log('✓ Connected to WebSocket broker', 'success');
+    }, (error) => {
+      setConnected(false);
+      log('✗ Connection failed: ' + error, 'error');
+    });
+  }
+
+  function disconnect() {
+    if (stompClient) {
+      stompClient.disconnect(() => {
+        setConnected(false);
+        log('Disconnected', 'system');
+      });
+    }
+  }
+
+  function subscribeOrder() {
+    const orderNumber = document.getElementById('order-number').value.trim();
+    if (!orderNumber) { log('Enter an order number first', 'error'); return; }
+
+    const topic = '/topic/orders/' + orderNumber;
+    if (subscriptions[topic]) { log('Already subscribed to ' + topic, 'system'); return; }
+
+    subscriptions[topic] = stompClient.subscribe(topic, (msg) => {
+      handleMessage(msg, topic);
+    });
+    log('✓ Subscribed to ' + topic, 'success');
+  }
+
+  function subscribeUser() {
+    const userId = document.getElementById('user-id').value.trim();
+    if (!userId) { log('Enter a user ID first', 'error'); return; }
+
+    const queue = '/queue/users/' + userId;
+    if (subscriptions[queue]) { log('Already subscribed to ' + queue, 'system'); return; }
+
+    subscriptions[queue] = stompClient.subscribe(queue, (msg) => {
+      handleMessage(msg, queue);
+    });
+    log('✓ Subscribed to ' + queue, 'success');
+  }
+
+  function handleMessage(msg, destination) {
+    try {
+      const payload = JSON.parse(msg.body);
+      const statusBadge = payload.newStatus
+        ? `<span class="badge badge-${payload.newStatus}">${payload.newStatus}</span>`
+        : '';
+
+      const html = `
+        <strong>${destination}</strong><br>
+        ${statusBadge}
+        <span style="color:#aaa"> ${payload.message || JSON.stringify(payload)}</span>
+        ${payload.trackingNumber ? `<br><span style="color:#5865f2">🚚 Tracking: ${payload.trackingNumber}</span>` : ''}
+      `;
+      log(html, 'message', true);
+    } catch (e) {
+      log('Raw: ' + msg.body, 'message');
+    }
+  }
+
+  function sendMessage() {
+    const dest = document.getElementById('send-destination').value;
+    const body = document.getElementById('msg-body').value;
+    stompClient.send(dest, {}, body);
+    log('Sent to ' + dest, 'system');
+  }
+
+  function setConnected(connected) {
+    document.getElementById('btn-connect').disabled    = connected;
+    document.getElementById('btn-disconnect').disabled = !connected;
+    document.getElementById('btn-sub-order').disabled  = !connected;
+    document.getElementById('btn-sub-user').disabled   = !connected;
+    document.getElementById('btn-send').disabled       = !connected;
+
+    const dot  = document.getElementById('status-dot');
+    const text = document.getElementById('status-text');
+    if (connected) {
+      dot.className  = 'status-dot dot-connected';
+      text.textContent = 'Connected';
+      text.style.color = '#2ea043';
+    } else {
+      dot.className  = 'status-dot dot-disconnected';
+      text.textContent = 'Disconnected';
+      text.style.color = '#da3633';
+    }
+  }
+
+  function log(message, type = 'system', isHtml = false) {
+    const logDiv = document.getElementById('log');
+    const time = new Date().toLocaleTimeString();
+    const div = document.createElement('div');
+    div.className = `log-entry log-${type}`;
+    div.innerHTML = `<span class="log-time">${time}</span>${isHtml ? message : escapeHtml(message)}`;
+    logDiv.appendChild(div);
+    logDiv.scrollTop = logDiv.scrollHeight;
+  }
+
+  function clearLog() {
+    document.getElementById('log').innerHTML = '';
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+{
+  "title": "Order Tracker - Service Metrics",
+  "uid": "order-tracker-main",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Orders Created (Total)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "orders_created_total",
+          "legendFormat": "Orders Created"
+        }
+      ],
+      "options": { "colorMode": "background", "graphMode": "area" }
+    },
+    {
+      "id": 2,
+      "title": "Orders Cancelled (Total)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "orders_cancelled_total",
+          "legendFormat": "Orders Cancelled"
+        }
+      ],
+      "options": { "colorMode": "background", "graphMode": "area" }
+    },
+    {
+      "id": 3,
+      "title": "Kafka Events Processed",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "notification_events_processed_total",
+          "legendFormat": "Events Processed"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "API Request Rate (per second)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_count{application='order-service'}[1m])",
+          "legendFormat": "{{method}} {{uri}} - {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "API p95 Latency (ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{application='order-service'}[5m])) * 1000",
+          "legendFormat": "p95 Latency"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "JVM Heap Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{area='heap', application='order-service'}",
+          "legendFormat": "Heap Used"
+        },
+        {
+          "expr": "jvm_memory_max_bytes{area='heap', application='order-service'}",
+          "legendFormat": "Heap Max"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Order Creation Time (p95 ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(orders_creation_time_seconds_bucket[5m])) * 1000",
+          "legendFormat": "Order Creation p95"
+        }
+      ]
+    }
+  ]
+}

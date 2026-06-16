@@ -1,0 +1,281 @@
+{
+  "info": {
+    "name": "E-Commerce Order Tracker API",
+    "description": "Complete API collection for the Real-Time E-Commerce Order Tracking System.\n\nUsage:\n1. Run 'Register Customer' or 'Login' first\n2. The JWT token is automatically saved to the {{token}} variable\n3. All subsequent requests use it via the collection-level Authorization",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "order-tracker"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080", "type": "string" },
+    { "key": "token",    "value": "",                     "type": "string" },
+    { "key": "order_number", "value": "",                 "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Customer",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.data && res.data.accessToken) {",
+                "  pm.collectionVariables.set('token', res.data.accessToken);",
+                "  console.log('Token saved:', res.data.accessToken.substring(0, 20) + '...');",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Chaithra Dev\",\n  \"email\": \"chaithra@example.com\",\n  \"password\": \"SecurePass@123\",\n  \"phone\": \"+919876543210\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/auth/register", "host": ["{{base_url}}"], "path": ["api","v1","auth","register"] }
+          }
+        },
+        {
+          "name": "Login Customer",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.data && res.data.accessToken) {",
+                "  pm.collectionVariables.set('token', res.data.accessToken);",
+                "  console.log('Token saved successfully');",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"chaithra@example.com\",\n  \"password\": \"SecurePass@123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/auth/login", "host": ["{{base_url}}"], "path": ["api","v1","auth","login"] }
+          }
+        },
+        {
+          "name": "Login Admin",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.data && res.data.accessToken) {",
+                "  pm.collectionVariables.set('token', res.data.accessToken);",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@ordertracker.com\",\n  \"password\": \"Admin@1234\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/auth/login", "host": ["{{base_url}}"], "path": ["api","v1","auth","login"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.data && res.data.orderNumber) {",
+                "  pm.collectionVariables.set('order_number', res.data.orderNumber);",
+                "  console.log('Order number saved:', res.data.orderNumber);",
+                "}",
+                "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                "pm.test('Order status is PENDING', () => {",
+                "  pm.expect(res.data.status).to.eql('PENDING');",
+                "});"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shippingAddress\": \"123 MG Road, Bangalore, Karnataka 560001\",\n  \"items\": [\n    {\n      \"productName\": \"Mechanical Keyboard\",\n      \"productSku\": \"KB-MECH-001\",\n      \"quantity\": 1,\n      \"unitPrice\": 2499.00\n    },\n    {\n      \"productName\": \"USB-C Hub\",\n      \"productSku\": \"HUB-USB-004\",\n      \"quantity\": 2,\n      \"unitPrice\": 999.00\n    }\n  ]\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/orders", "host": ["{{base_url}}"], "path": ["api","v1","orders"] }
+          }
+        },
+        {
+          "name": "Get Order by Number",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                "pm.test('Response has orderNumber', () => {",
+                "  const res = pm.response.json();",
+                "  pm.expect(res.data.orderNumber).to.be.a('string');",
+                "});"
+              ]
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/v1/orders/{{order_number}}", "host": ["{{base_url}}"], "path": ["api","v1","orders","{{order_number}}"] }
+          }
+        },
+        {
+          "name": "Get My Orders",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/my?page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api","v1","orders","my"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/api/v1/orders/{{order_number}}/cancel", "host": ["{{base_url}}"], "path": ["api","v1","orders","{{order_number}}","cancel"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Update Order Status — Confirm",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CONFIRMED\",\n  \"statusNote\": \"Payment verified\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/orders/{{order_number}}/status", "host": ["{{base_url}}"], "path": ["api","v1","orders","{{order_number}}","status"] }
+          }
+        },
+        {
+          "name": "Update Order Status — Ship",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SHIPPED\",\n  \"trackingNumber\": \"TRK-987654321\",\n  \"statusNote\": \"Dispatched via BlueDart\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/v1/orders/{{order_number}}/status", "host": ["{{base_url}}"], "path": ["api","v1","orders","{{order_number}}","status"] }
+          }
+        },
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders?page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api","v1","admin","orders"],
+              "query": [{ "key": "page", "value": "0" }, { "key": "size", "value": "20" }]
+            }
+          }
+        },
+        {
+          "name": "Get Orders by Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/orders/by-status?status=SHIPPED",
+              "host": ["{{base_url}}"],
+              "path": ["api","v1","admin","orders","by-status"],
+              "query": [{ "key": "status", "value": "SHIPPED" }]
+            }
+          }
+        },
+        {
+          "name": "Get Analytics Dashboard",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                "pm.test('Has totalOrders', () => {",
+                "  const res = pm.response.json();",
+                "  pm.expect(res.data.totalOrders).to.be.a('number');",
+                "});"
+              ]
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/v1/admin/analytics", "host": ["{{base_url}}"], "path": ["api","v1","admin","analytics"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health & Monitoring",
+      "item": [
+        {
+          "name": "Order Service Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "http://localhost:8081/actuator/health", "host": ["http://localhost:8081"], "path": ["actuator","health"] }
+          }
+        },
+        {
+          "name": "Notification Service Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "http://localhost:8082/actuator/health", "host": ["http://localhost:8082"], "path": ["actuator","health"] }
+          }
+        },
+        {
+          "name": "API Gateway Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "http://localhost:8080/actuator/health", "host": ["http://localhost:8080"], "path": ["actuator","health"] }
+          }
+        },
+        {
+          "name": "Prometheus Metrics",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "http://localhost:8081/actuator/prometheus", "host": ["http://localhost:8081"], "path": ["actuator","prometheus"] }
+          }
+        }
+      ]
+    }
+  ]
+}

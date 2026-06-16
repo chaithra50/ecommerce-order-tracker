@@ -1,0 +1,49 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # Use simple in-memory cache for tests — no Redis needed
+  cache:
+    type: simple
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      retries: 0
+
+jwt:
+  secret: test-secret-key-that-is-long-enough-for-hmac-sha256-signing-algorithm-only
+  expiration-ms: 3600000
+
+kafka:
+  topics:
+    order-events: test-order-events
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+logging:
+  level:
+    com.ordertracker: DEBUG
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
