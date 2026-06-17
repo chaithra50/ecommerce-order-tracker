@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY target/order-service-1.0.0.jar app.jar
+COPY order-service/target/order-service-1.0.0.jar app.jar
 
 USER appuser
 
