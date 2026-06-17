@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @ActiveProfiles("test")
 @EmbeddedKafka(
-        partitions = 1,
+        partitions = 3,
         topics = {"test-order-events"},
         brokerProperties = {
                 "listeners=PLAINTEXT://localhost:9099",
@@ -83,8 +83,7 @@ class OrderEventProducerIntegrationTest {
                 (MessageListener<String, OrderEvent>) receivedRecords::add);
         container.start();
 
-        ContainerTestUtils.waitForAssignment(container,
-                embeddedKafkaBroker.getPartitionsPerTopic());
+        ContainerTestUtils.waitForAssignment(container, 3);
     }
 
     @AfterEach

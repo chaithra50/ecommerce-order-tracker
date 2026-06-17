@@ -5,23 +5,35 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- Admin user  (password: Admin@1234)
-INSERT INTO users (email, password, full_name, phone, role)
+MERGE INTO users (
+    email,
+    password,
+    full_name,
+    phone,
+    role
+)
+KEY(email)
 VALUES (
     'admin@ordertracker.com',
     '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeAhMD.Y9MgOVUICe',
     'System Admin',
     '+919876543210',
     'ROLE_ADMIN'
-)
-ON CONFLICT (email) DO NOTHING;
-
+);
 -- Sample customer  (password: Customer@1234)
-INSERT INTO users (email, password, full_name, phone, role)
-VALUES (
-    'customer@test.com',
-    '$2a$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
-    'Test Customer',
-    '+919123456789',
-    'ROLE_CUSTOMER'
+MERGE INTO users (
+    email,
+    password,
+    full_name,
+    phone,
+    role
 )
-ON CONFLICT (email) DO NOTHING;
+KEY(email)
+VALUES (
+    'customer@ordertracker.com',
+    '$2a$12$...',
+    'Sample Customer',
+    '+919999999999',
+    'ROLE_CUSTOMER'
+);
+

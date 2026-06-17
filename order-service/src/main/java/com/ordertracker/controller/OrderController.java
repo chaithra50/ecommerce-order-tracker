@@ -23,15 +23,15 @@ public class OrderController {
 
     // POST /api/v1/orders — Create a new order
     @PostMapping
-    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<OrderResponse>> createOrder(
-            @Valid @RequestBody OrderRequest request,
-            @AuthenticationPrincipal User currentUser) {
-
-        OrderResponse response = orderService.createOrder(request, currentUser);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Order created successfully", response));
-    }
+@PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
+public ResponseEntity<ApiResponse<OrderResponse>> createOrder(
+        @Valid @RequestBody OrderRequest request,
+        @AuthenticationPrincipal Object currentUser) {
+        
+    OrderResponse response = orderService.createOrder(request, null);
+    return ResponseEntity.status(HttpStatus.CREATED)
+            .body(ApiResponse.success("Order created successfully", response));
+}
 
     // GET /api/v1/orders/{orderNumber} — Get specific order
     @GetMapping("/{orderNumber}")

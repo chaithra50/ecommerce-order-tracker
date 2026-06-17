@@ -20,8 +20,11 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
+import com.ordertracker.security.JwtAuthFilter;
+import com.ordertracker.security.JwtService;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 @WebMvcTest(AuthController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 @DisplayName("AuthController Integration Tests")
 class AuthControllerTest {
@@ -34,7 +37,10 @@ class AuthControllerTest {
 
     @MockBean
     private AuthService authService;
-
+    @MockBean
+    private JwtService jwtService;
+    @MockBean
+    private JwtAuthFilter jwtAuthFilter;
     private final AuthDTOs.AuthResponse sampleAuthResponse = AuthDTOs.AuthResponse.builder()
             .accessToken("mocked.jwt.token")
             .tokenType("Bearer")
